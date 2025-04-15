@@ -13,8 +13,8 @@ const AdditionGame = () => {
 
   // 新しい問題を生成する関数
   const generateNewQuestion = () => {
-    setNum1(Math.floor(Math.random() * 20) + 1);
-    setNum2(Math.floor(Math.random() * 20) + 1);
+    setNum1(Math.floor(Math.random() * 10) + 1);
+    setNum2(Math.floor(Math.random() * 10) + 1);
     setUserAnswer('');
     setFeedback('');
   };
@@ -80,7 +80,7 @@ const AdditionGame = () => {
     <div className="flex flex-col items-center justify-center min-h-64 bg-gray-100 p-6 rounded-lg shadow-md">
       {!gameStarted ? (
         <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4 text-blue-600">足し算ゲーム</h1>
+          <h1 className="text-3xl font-bold mb-4 text-blue-600">たしざんゲーム</h1>
           <p className="mb-4">制限時間内で何問解けるかな？</p>
           
           <div className="mb-6">
@@ -128,7 +128,7 @@ const AdditionGame = () => {
             }}
             className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
           >
-            もう一度プレイ
+            もういっかい
           </button>
         </div>
       ) : (
