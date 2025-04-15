@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-// import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const AdditionGame = () => {
   const [num1, setNum1] = useState(0);
@@ -13,11 +12,22 @@ const AdditionGame = () => {
   const [gameStarted, setGameStarted] = useState(false);
   const [showTimer, setShowTimer] = useState(true);
   const [scoreHistory, setScoreHistory] = useState([]);
+  // 難易度レベルを保持する状態変数を追加
+  const [level, setLevel] = useState('ふつう');
 
-  // 新しい問題を生成する関数
+  // レベルごとの数値の上限を定義
+  const levelLimits = {
+    'かんたん': 5,
+    'ふつう': 10,
+    'むずかしい': 20
+  };
+
+  // 新しい問題を生成する関数（難易度に応じて数値範囲を変更）
   const generateNewQuestion = () => {
-    setNum1(Math.floor(Math.random() * 10) + 1);
-    setNum2(Math.floor(Math.random() * 10) + 1);
+    // 現在の難易度に基づいて上限値を取得
+    const maxNum = levelLimits[level];
+    setNum1(Math.floor(Math.random() * maxNum) + 1);
+    setNum2(Math.floor(Math.random() * maxNum) + 1);
     setUserAnswer('');
     setFeedback('');
   };
@@ -80,24 +90,62 @@ const AdditionGame = () => {
     } else if (timeLeft === 0) {
       setGameActive(false);
       setFeedback(`ゲーム終了！あなたのスコアは ${score} 点です！`);
-      // スコア履歴を更新
-      // setScoreHistory([...scoreHistory, {
-      //   回数: scoreHistory.length + 1,
-      //   スコア: score,
-      //   制限時間: selectedTime === 30 ? '30秒' : '1分'
-      // }]);
+      // スコア履歴を更新（難易度情報を追加）
+      setScoreHistory([...scoreHistory, {
+        回数: scoreHistory.length + 1,
+        スコア: score,
+        制限時間: selectedTime === 30 ? '30秒' : '1分',
+        難易度: level
+      }]);
       // タイマー表示をリセット
       setShowTimer(true);
     }
     return () => clearTimeout(timer);
-  }, [timeLeft, gameActive, score, selectedTime, scoreHistory]);
+  }, [timeLeft, gameActive, score, selectedTime, scoreHistory, level]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-64 bg-gray-100 p-8 rounded-lg shadow-md">
       {!gameStarted ? (
         <div className="text-center w-full">
-          <h1 className="text-5xl font-bold mb-6 text-blue-600">足し算ゲーム</h1>
+          <h1 className="text-5xl font-bold mb-6 text-blue-600">たしざんゲーム</h1>
           <p className="text-2xl mb-6">制限時間内で何問解けるかな？</p>
+          
+          {/* 難易度選択ボタンを追加 */}
+          <div className="mb-8">
+            <p className="text-xl mb-4 font-bold">むずかしさ：</p>
+            <div className="flex justify-center gap-4">
+              <button 
+                onClick={() => setLevel('かんたん')}
+                className={`px-6 py-3 rounded-lg text-xl font-bold ${
+                  level === 'かんたん' 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                }`}
+              >
+                かんたん (〜5)
+              </button>
+              <button 
+                onClick={() => setLevel('ふつう')}
+                className={`px-6 py-3 rounded-lg text-xl font-bold ${
+                  level === 'ふつう' 
+                    ? 'bg-yellow-500 text-white' 
+                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                }`}
+              >
+                ふつう (〜10)
+              </button>
+              <button 
+                onClick={() => setLevel('むずかしい')}
+                className={`px-6 py-3 rounded-lg text-xl font-bold ${
+                  level === 'むずかしい' 
+                    ? 'bg-red-500 text-white' 
+                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                }`}
+              >
+                むずかしい (〜20)
+              </button>
+            </div>
+          </div>
           
           <div className="mb-8">
             <p className="text-xl mb-4 font-bold">制限時間を選択：</p>
@@ -129,36 +177,9 @@ const AdditionGame = () => {
             onClick={startGame}
             className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg text-xl mb-8"
           >
-            げーむスタート
+            スタート！
           </button>
-{/*           
-          {scoreHistory.length > 0 && (
-            <div className="mt-6 w-full">
-              <h2 className="text-2xl font-bold mb-4 text-blue-600">スコア履歴</h2>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={scoreHistory}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="回数" label={{ value: 'ゲーム回数', position: 'insideBottom', offset: -5 }} />
-                    <YAxis label={{ value: 'スコア', angle: -90, position: 'insideLeft' }} />
-                    <Tooltip
-                      formatter={(value, name) => [value, name]}
-                      labelFormatter={(label) => `${label}回目`}
-                      contentStyle={{ fontSize: '16px' }}
-                    />
-                    <Bar dataKey="スコア" fill="#8884d8" name="スコア" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-4 text-lg">
-                {scoreHistory.map((record, index) => (
-                  <div key={index} className="mb-2">
-                    {index + 1}回目: {record.スコア}点 ({record.制限時間})
-                  </div>
-                ))}
-              </div>
-            </div>
-          )} */}
+          
         </div>
       ) : !gameActive ? (
         <div className="text-center">
@@ -169,6 +190,7 @@ const AdditionGame = () => {
               setGameStarted(false);
               setSelectedTime(30);
               setTimeLeft(30);
+              setLevel('ふつう'); // 難易度もリセット
             }}
             className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg text-xl"
           >
@@ -180,6 +202,9 @@ const AdditionGame = () => {
           <div className="flex justify-between w-full mb-6">
             <div className="bg-blue-500 text-white px-4 py-2 rounded-lg text-xl">
               スコア: {score}
+            </div>
+            <div className="bg-purple-500 text-white px-4 py-2 rounded-lg text-xl">
+              難易度: {level}
             </div>
             <div 
               className={`bg-red-500 text-white px-4 py-2 rounded-lg text-xl transition-opacity duration-1000 ${
