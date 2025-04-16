@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const AdditionGame = () => {
   const [num1, setNum1] = useState(0);
@@ -15,12 +15,43 @@ const AdditionGame = () => {
   // 難易度レベルを保持する状態変数を追加
   const [level, setLevel] = useState('ふつう');
 
+  // 効果音のためのRefオブジェクトを作成
+  const correctSoundRef = useRef(null);
+  const incorrectSoundRef = useRef(null);
+
   // レベルごとの数値の上限を定義
   const levelLimits = {
     'かんたん': 5,
     'ふつう': 10,
     'むずかしい': 20
   };
+
+  // 効果音オブジェクトの初期化
+  useEffect(() => {
+    // 正解音と不正解音のAudioオブジェクトを作成
+    correctSoundRef.current = new Audio('/sounds/maru_short.mp3'); // 正解音のパスを指定
+    incorrectSoundRef.current = new Audio('/sounds/beep.mp3'); // 不正解音のパスを指定
+    
+    // 音量調整（必要に応じて）
+    correctSoundRef.current.volume = 5.7;
+    incorrectSoundRef.current.volume = 0.7;
+    
+    // ブラウザによっては、ユーザーインタラクション前のロードが必要
+    correctSoundRef.current.load();
+    incorrectSoundRef.current.load();
+    
+    // クリーンアップ関数
+    return () => {
+      if (correctSoundRef.current) {
+        correctSoundRef.current.pause();
+        correctSoundRef.current = null;
+      }
+      if (incorrectSoundRef.current) {
+        incorrectSoundRef.current.pause();
+        incorrectSoundRef.current = null;
+      }
+    };
+  }, []);
 
   // 新しい問題を生成する関数（難易度に応じて数値範囲を変更）
   const generateNewQuestion = () => {
@@ -42,6 +73,23 @@ const AdditionGame = () => {
     generateNewQuestion();
   };
 
+  // 効果音を再生する関数
+  const playSound = (isCorrect) => {
+    if (isCorrect && correctSoundRef.current) {
+      // 正解の場合
+      correctSoundRef.current.currentTime = 0; // 音を最初から再生
+      correctSoundRef.current.play().catch(error => {
+        console.error('効果音の再生に失敗しました:', error);
+      });
+    } else if (!isCorrect && incorrectSoundRef.current) {
+      // 不正解の場合
+      incorrectSoundRef.current.currentTime = 0; // 音を最初から再生
+      incorrectSoundRef.current.play().catch(error => {
+        console.error('効果音の再生に失敗しました:', error);
+      });
+    }
+  };
+
   // 答えを確認する関数
   const checkAnswer = () => {
     const correctAnswer = num1 + num2;
@@ -50,9 +98,11 @@ const AdditionGame = () => {
     if (userAnswerNum === correctAnswer) {
       setFeedback('正解！👍');
       setScore(score + 1);
+      playSound(true); // 正解音を再生
       generateNewQuestion();
     } else {
       setFeedback(`不正解です。正解は ${correctAnswer} でした。`);
+      playSound(false); // 不正解音を再生
       generateNewQuestion();
     }
   };
