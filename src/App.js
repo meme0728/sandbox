@@ -15,12 +15,14 @@ const AdditionGame = () => {
   const [scoreHistory, setScoreHistory] = useState([]);
   // 難易度レベルを保持する状態変数を追加
   const [level, setLevel] = useState('ふつう');
+  // 計算モードを保持する状態変数を追加
+  const [mode, setMode] = useState('たしざん');
+  // フィードバック表示中かどうかを管理する状態変数を追加
+  const [isShowingFeedback, setIsShowingFeedback] = useState(false);
 
   // use-soundフックを使用して効果音を定義
-  // const [playCorrect] = useSound('./tree/main/public/maru_short.mp3', { volume: 0.7 });
-  // const [playIncorrect] = useSound('./tree/main/public/beep.mp3', { volume: 0.7 });
-  const [playCorrect] = useSound('https://github.com/meme0728/sandbox/blob/3983584bad7080ca5ddbf5d75742505e3bb28070/public/maru_short.mp3', { volume: 0.7 });
-  const [playIncorrect] = useSound('https://github.com/meme0728/sandbox/blob/3983584bad7080ca5ddbf5d75742505e3bb28070/public/beep.mp3', { volume: 0.7 });
+  const [playCorrect] = useSound('./tree/main/public/maru_short.mp3', { volume: 0.7 });
+  const [playIncorrect] = useSound('./tree/main/public/beep.mp3', { volume: 0.7 });
 
   // レベルごとの数値の上限を定義
   const levelLimits = {
@@ -33,10 +35,22 @@ const AdditionGame = () => {
   const generateNewQuestion = () => {
     // 現在の難易度に基づいて上限値を取得
     const maxNum = levelLimits[level];
-    setNum1(Math.floor(Math.random() * maxNum) + 1);
-    setNum2(Math.floor(Math.random() * maxNum) + 1);
+    
+    if (mode === 'たしざん') {
+      // たしざんモード
+      setNum1(Math.floor(Math.random() * maxNum) + 1);
+      setNum2(Math.floor(Math.random() * maxNum) + 1);
+    } else {
+      // ひきざんモード - 答えが正の数になるようにする
+      const a = Math.floor(Math.random() * maxNum) + 1;
+      const b = Math.floor(Math.random() * a) + 1; // a以下の数値を生成
+      setNum1(a);
+      setNum2(b);
+    }
+    
     setUserAnswer('');
     setFeedback('');
+    setIsShowingFeedback(false);
   };
 
   // ゲームを開始する関数
@@ -66,36 +80,48 @@ const AdditionGame = () => {
 
   // 答えを確認する関数
   const checkAnswer = () => {
-    const correctAnswer = num1 + num2;
+    // フィードバック表示中は何もしない
+    if (isShowingFeedback) return;
+
+    // モードに応じた正解を計算
+    const correctAnswer = mode === 'たしざん' ? num1 + num2 : num1 - num2;
     const userAnswerNum = parseInt(userAnswer, 10);
 
     if (userAnswerNum === correctAnswer) {
       setFeedback('正解！👍');
       setScore(score + 1);
       playSound(true); // 正解音を再生
-      generateNewQuestion();
     } else {
       setFeedback(`不正解です。正解は ${correctAnswer} でした。`);
       playSound(false); // 不正解音を再生
-      generateNewQuestion();
     }
+
+    // フィードバック表示中フラグをオン
+    setIsShowingFeedback(true);
+
+    // 1.5秒後に次の問題を表示
+    setTimeout(() => {
+      generateNewQuestion();
+    }, 1500);
   };
 
   // 数字ボタンがクリックされたときの処理
   const handleNumberClick = (num) => {
-    if (gameActive) {
+    if (gameActive && !isShowingFeedback) {
       setUserAnswer(userAnswer + num);
     }
   };
 
   // 入力をクリアする処理
   const handleClear = () => {
-    setUserAnswer('');
+    if (!isShowingFeedback) {
+      setUserAnswer('');
+    }
   };
 
   // キーボードでEnterを押した時の処理
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && gameActive) {
+    if (e.key === 'Enter' && gameActive && !isShowingFeedback) {
       checkAnswer();
     }
   };
@@ -120,20 +146,48 @@ const AdditionGame = () => {
         回数: prevHistory.length + 1,
         スコア: score,
         制限時間: selectedTime === 30 ? '30秒' : '1分',
-        難易度: level
+        難易度: level,
+        モード: mode
       }]);
       // タイマー表示をリセット
       setShowTimer(true);
     }
     return () => clearTimeout(timer);
-  }, [timeLeft, gameActive, score, selectedTime, level]);
+  }, [timeLeft, gameActive, score, selectedTime, level, mode]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-64 bg-gray-100 p-8 rounded-lg shadow-md">
       {!gameStarted ? (
         <div className="text-center w-full">
-          <h1 className="text-5xl font-bold mb-6 text-blue-600">たしざんゲーム</h1>
-          <p className="text-2xl mb-6">制限時間内で何問解けるかな？</p>
+          <h1 className="text-5xl font-bold mb-6 text-blue-600">計算ゲーム</h1>
+          <p className="text-2xl mb-6">タイムアタック</p>
+          
+          {/* 計算モード選択ボタンを追加 */}
+          <div className="mb-8">
+            <p className="text-xl mb-4 font-bold">計算モード：</p>
+            <div className="flex justify-center gap-6">
+              <button 
+                onClick={() => setMode('たしざん')}
+                className={`px-6 py-3 rounded-lg text-xl font-bold ${
+                  mode === 'たしざん' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                }`}
+              >
+                たしざん
+              </button>
+              <button 
+                onClick={() => setMode('ひきざん')}
+                className={`px-6 py-3 rounded-lg text-xl font-bold ${
+                  mode === 'ひきざん' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                }`}
+              >
+                ひきざん
+              </button>
+            </div>
+          </div>
           
           {/* 難易度選択ボタンを追加 */}
           <div className="mb-8">
@@ -216,6 +270,7 @@ const AdditionGame = () => {
               setSelectedTime(30);
               setTimeLeft(30);
               setLevel('ふつう'); // 難易度もリセット
+              // モードはリセットしない
             }}
             className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg text-xl"
           >
@@ -225,14 +280,14 @@ const AdditionGame = () => {
       ) : (
         <div className="text-center">
           <div className="flex justify-between w-full mb-6">
-            <div className="bg-blue-500 text-white px-4 py-2 rounded-lg text-xl p-2">
+            <div className="bg-blue-500 text-white px-4 py-2 rounded-lg text-xl m-1">
               スコア: {score}
             </div>
-            <div className="bg-purple-500 text-white px-4 py-2 rounded-lg text-xl p-2">
+            <div className="bg-purple-500 text-white px-4 py-2 rounded-lg text-xl m-1">
               難易度: {level}
             </div>
             <div 
-              className={`bg-red-500 text-white px-4 py-2 rounded-lg text-xl transition-opacity duration-1000 ${
+              className={`bg-red-500 text-white px-4 py-2 rounded-lg text-xl transition-opacity duration-1000 p-2 ${
                 showTimer ? 'opacity-100' : 'opacity-0'
               }`}
             >
@@ -241,7 +296,7 @@ const AdditionGame = () => {
           </div>
           
           <div className="text-4xl mb-6">
-            {num1} + {num2} = ?
+            {num1} {mode === 'たしざん' ? '+' : '-'} {num2} = ?
           </div>
           
           <div className="mb-6">
@@ -253,6 +308,7 @@ const AdditionGame = () => {
               className="border-2 border-gray-300 rounded-lg px-4 py-3 w-40 text-center text-3xl"
               autoFocus
               readOnly
+              disabled={isShowingFeedback}
             />
           </div>
           
@@ -263,6 +319,7 @@ const AdditionGame = () => {
                 key={num} 
                 onClick={() => handleNumberClick(num.toString())}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 px-6 rounded-lg text-3xl"
+                disabled={isShowingFeedback}
               >
                 {num}
               </button>
@@ -270,19 +327,25 @@ const AdditionGame = () => {
             <button 
               onClick={handleClear}
               className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-4 px-6 rounded-lg text-2xl col-span-2"
+              disabled={isShowingFeedback}
             >
               クリア
             </button>
             <button 
               onClick={checkAnswer}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-lg text-2xl col-span-3"
+              className={`bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-lg text-2xl col-span-3 ${
+                isShowingFeedback ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              disabled={isShowingFeedback}
             >
               回答する
             </button>
           </div>
           
           {feedback && (
-            <div className={`text-2xl ${feedback.includes('正解') ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`text-2xl ${feedback.includes('正解') ? 'text-green-600' : 'text-red-600'} transition-opacity duration-300 ${
+              isShowingFeedback ? 'opacity-100' : 'opacity-0'
+            }`}>
               {feedback}
             </div>
           )}
