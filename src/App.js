@@ -88,11 +88,11 @@ const AdditionGame = () => {
     const userAnswerNum = parseInt(userAnswer, 10);
 
     if (userAnswerNum === correctAnswer) {
-      setFeedback('正解！👍');
+      setFeedback('せいかい！');
       setScore(score + 1);
       playSound(true); // 正解音を再生
     } else {
-      setFeedback(`不正解です。正解は ${correctAnswer} でした。`);
+      setFeedback(`ざんねん。${correctAnswer} でした。`);
       playSound(false); // 不正解音を再生
     }
 
@@ -343,10 +343,22 @@ const AdditionGame = () => {
           </div>
           
           {feedback && (
-            <div className={`text-2xl ${feedback.includes('正解') ? 'text-green-600' : 'text-red-600'} transition-opacity duration-300 ${
-              isShowingFeedback ? 'opacity-100' : 'opacity-0'
-            }`}>
+            <div className={`
+              ${feedback.includes('せいかい') 
+                ? 'bg-green-100 border-2 border-green-500 text-green-700' 
+                : 'bg-red-100 border-2 border-red-500 text-red-700'} 
+              p-4 rounded-lg mb-4 mt-2 font-bold text-4xl transform transition-all duration-300
+              ${isShowingFeedback 
+                ? 'scale-110 opacity-100' 
+                : 'scale-90 opacity-0'}
+            `}>
+              {feedback.includes('せいかい') && 
+                <span className="inline-block animate-bounce mr-2">🎉</span>
+              }
               {feedback}
+              {feedback.includes('せいかい') && 
+                <span className="inline-block animate-bounce ml-2">🎉</span>
+              }
             </div>
           )}
         </div>
