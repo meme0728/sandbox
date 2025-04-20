@@ -21,6 +21,12 @@ const AdditionGame = () => {
   const [isShowingFeedback, setIsShowingFeedback] = useState(false);
   // エンドレスモードを管理する状態変数を追加
   const [isEndless, setIsEndless] = useState(false);
+  // サバイバルモードを管理する状態変数を追加
+  const [isSurvival, setIsSurvival] = useState(false);
+  // サバイバルモード用の問題ごとのタイマー
+  const [questionTimer, setQuestionTimer] = useState(5);
+  // サバイバルモード用のタイマーの進行状況（0〜100%）
+  const [timerProgress, setTimerProgress] = useState(100);
 
   // use-soundフックを使用して効果音を定義
   const [playCorrect] = useSound('./tree/main/public/maru_short.mp3', { volume: 0.7 });
@@ -53,6 +59,12 @@ const AdditionGame = () => {
     setUserAnswer('');
     setFeedback('');
     setIsShowingFeedback(false);
+    
+    // サバイバルモードの場合、問題ごとのタイマーをリセット
+    if (isSurvival) {
+      setQuestionTimer(5);
+      setTimerProgress(100);
+    }
   };
 
   // ゲームを開始する関数
@@ -60,12 +72,17 @@ const AdditionGame = () => {
     setGameActive(true);
     setGameStarted(true);
     setScore(0);
-    if (!isEndless) {
+    if (!isEndless && !isSurvival) {
       setTimeLeft(selectedTime);
-    } else {
+      setShowTimer(true);
+    } else if (isEndless) {
       setTimeLeft(999); // エンドレスモードでは時間制限なし（表示用に大きな値を設定）
+      setShowTimer(false);
+    } else if (isSurvival) {
+      setQuestionTimer(5); // サバイバルモードでは問題ごとに5秒
+      setTimerProgress(100);
+      setShowTimer(false); // 通常のタイマーは非表示
     }
-    setShowTimer(!isEndless); // エンドレスモードではタイマーを表示しない
     generateNewQuestion();
   };
 
@@ -109,8 +126,8 @@ const AdditionGame = () => {
       setFeedback(`ざんねん。${correctAnswer} でした。`);
       playSound(false); // 不正解音を再生
       
-      // エンドレスモードの場合、不正解でゲーム終了
-      if (isEndless) {
+      // エンドレスモードまたはサバイバルモードの場合、不正解でゲーム終了
+      if (isEndless || isSurvival) {
         // フィードバック表示後にゲーム終了
         setIsShowingFeedback(true);
         setTimeout(() => {
@@ -121,7 +138,7 @@ const AdditionGame = () => {
           setScoreHistory(prevHistory => [...prevHistory, {
             回数: prevHistory.length + 1,
             スコア: score,
-            制限時間: 'エンドレス',
+            制限時間: isEndless ? 'エンドレス' : 'サバイバル',
             難易度: level,
             モード: mode
           }]);
@@ -157,11 +174,11 @@ const AdditionGame = () => {
     }
   };
 
-  // タイマー機能
+  // 通常モード用タイマー機能
   useEffect(() => {
     let timer;
-    // エンドレスモードでなく、時間が残っている場合のみタイマーを進める
-    if (gameActive && timeLeft > 0 && !isEndless) {
+    // エンドレスモードとサバイバルモードでなく、時間が残っている場合のみタイマーを進める
+    if (gameActive && timeLeft > 0 && !isEndless && !isSurvival) {
       timer = setTimeout(() => {
         setTimeLeft(timeLeft - 1);
         // タイマーが10秒経過したらタイマーを非表示にする
@@ -169,8 +186,8 @@ const AdditionGame = () => {
           setShowTimer(false);
         }
       }, 1000);
-    } else if (timeLeft === 0 && gameActive && !isEndless) {
-      // タイムアップでゲーム終了（エンドレスモードでない場合のみ）
+    } else if (timeLeft === 0 && gameActive && !isEndless && !isSurvival) {
+      // タイムアップでゲーム終了（通常モードのみ）
       setGameActive(false);
       setFeedback(`スコアは ${score} 点でした！`);
       // スコア履歴を更新
@@ -185,7 +202,48 @@ const AdditionGame = () => {
       setShowTimer(true);
     }
     return () => clearTimeout(timer);
-  }, [timeLeft, gameActive, score, selectedTime, level, mode, isEndless]);
+  }, [timeLeft, gameActive, score, selectedTime, level, mode, isEndless, isSurvival]);
+
+  // サバイバルモード用のタイマー機能
+  useEffect(() => {
+    let survivalTimer;
+    let progressTimer;
+    
+    if (gameActive && isSurvival && !isShowingFeedback) {
+      // 問題ごとの5秒タイマー
+      if (questionTimer > 0) {
+        survivalTimer = setTimeout(() => {
+          setQuestionTimer(prev => prev - 0.1);
+          // タイマーの進行状況を更新（0〜100%）
+          setTimerProgress(questionTimer / 5 * 100);
+        }, 100); // 0.1秒ごとに更新して滑らかに
+      } else {
+        // 時間切れでゲーム終了
+        setFeedback('時間切れ！');
+        playSound(false);
+        
+        setIsShowingFeedback(true);
+        setTimeout(() => {
+          setGameActive(false);
+          setFeedback(`スコアは ${score} 点でした！`);
+          
+          // スコア履歴を更新
+          setScoreHistory(prevHistory => [...prevHistory, {
+            回数: prevHistory.length + 1,
+            スコア: score,
+            制限時間: 'サバイバル',
+            難易度: level,
+            モード: mode
+          }]);
+        }, 1500);
+      }
+    }
+    
+    return () => {
+      clearTimeout(survivalTimer);
+      clearTimeout(progressTimer);
+    };
+  }, [questionTimer, gameActive, isSurvival, isShowingFeedback, score, level, mode, playSound]);
 
   // アニメーション用のスタイルをheadタグに追加
   useEffect(() => {
@@ -221,6 +279,9 @@ const AdditionGame = () => {
       }
       .animation-delay-700 {
         animation-delay: 0.7s;
+      }
+      .timer-bar {
+        transition: width 0.1s linear;
       }
     `;
     document.head.appendChild(styleTag);
@@ -303,14 +364,15 @@ const AdditionGame = () => {
           
           <div className="mb-8">
             <p className="text-xl mb-4 font-bold">制限時間を選択：</p>
-            <div className="flex justify-center gap-4">
+            <div className="flex flex-wrap justify-center gap-4">
               <button 
                 onClick={() => {
                   setSelectedTime(30);
                   setIsEndless(false);
+                  setIsSurvival(false);
                 }}
                 className={`px-6 py-3 rounded-lg text-xl font-bold ${
-                  selectedTime === 30 && !isEndless
+                  selectedTime === 30 && !isEndless && !isSurvival
                     ? 'bg-blue-600 text-white' 
                     : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
                 }`}
@@ -321,9 +383,10 @@ const AdditionGame = () => {
                 onClick={() => {
                   setSelectedTime(60);
                   setIsEndless(false);
+                  setIsSurvival(false);
                 }}
                 className={`px-6 py-3 rounded-lg text-xl font-bold ${
-                  selectedTime === 60 && !isEndless
+                  selectedTime === 60 && !isEndless && !isSurvival
                     ? 'bg-blue-600 text-white' 
                     : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
                 }`}
@@ -333,6 +396,7 @@ const AdditionGame = () => {
               <button 
                 onClick={() => {
                   setIsEndless(true);
+                  setIsSurvival(false);
                 }}
                 className={`px-6 py-3 rounded-lg text-xl font-bold ${
                   isEndless
@@ -342,10 +406,28 @@ const AdditionGame = () => {
               >
                 エンドレス
               </button>
+              <button 
+                onClick={() => {
+                  setIsEndless(false);
+                  setIsSurvival(true);
+                }}
+                className={`px-6 py-3 rounded-lg text-xl font-bold ${
+                  isSurvival
+                    ? 'bg-red-600 text-white' 
+                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                }`}
+              >
+                サバイバル
+              </button>
             </div>
             {isEndless && (
               <p className="text-sm mt-2 text-purple-600 font-bold">
                 ※エンドレスモードでは不正解が出るまで続きます
+              </p>
+            )}
+            {isSurvival && (
+              <p className="text-sm mt-2 text-red-600 font-bold">
+                ※サバイバルモードでは各問題5秒以内に正解しないとゲームオーバーです
               </p>
             )}
           </div>
@@ -381,7 +463,7 @@ const AdditionGame = () => {
                   難易度: {level}
                 </div>
                 <div className="bg-purple-500 text-white px-4 py-2 rounded-lg font-bold">
-                  {isEndless ? 'エンドレス' : `${selectedTime}秒`}
+                  {isSurvival ? 'サバイバル' : isEndless ? 'エンドレス' : `${selectedTime}秒`}
                 </div>
               </div>
             </div>
@@ -400,6 +482,7 @@ const AdditionGame = () => {
               setTimeLeft(30);
               setLevel('ふつう'); // 難易度もリセット
               setIsEndless(false); // エンドレスモードもリセット
+              setIsSurvival(false); // サバイバルモードもリセット
               // モードはリセットしない
             }}
             className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-10 rounded-full text-2xl shadow-lg transform transition-transform hover:scale-105 border-2 border-green-300"
@@ -416,7 +499,7 @@ const AdditionGame = () => {
             <div className="bg-purple-500 text-white px-4 py-2 rounded-lg text-xl m-1">
               難易度: {level}
             </div>
-            {!isEndless && (
+            {!isEndless && !isSurvival && (
               <div 
                 className={`bg-red-500 text-white px-4 py-2 rounded-lg text-xl transition-opacity duration-1000 p-2 ${
                   showTimer ? 'opacity-100' : 'opacity-0'
@@ -430,7 +513,22 @@ const AdditionGame = () => {
                 エンドレスモード
               </div>
             )}
+            {isSurvival && (
+              <div className="bg-red-600 text-white px-4 py-2 rounded-lg text-xl m-1">
+                サバイバルモード
+              </div>
+            )}
           </div>
+          
+          {/* サバイバルモード用タイマーゲージ */}
+          {isSurvival && (
+            <div className="w-full h-4 bg-gray-200 rounded-full mb-6 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-red-500 to-yellow-400 timer-bar"
+                style={{ width: `${timerProgress}%` }}
+              ></div>
+            </div>
+          )}
           
           <div className="text-4xl mb-6">
             {num1} {mode === 'たしざん' ? '+' : '-'} {num2} = ?
