@@ -140,7 +140,7 @@ const AdditionGame = () => {
     } else if (timeLeft === 0 && gameActive) {
       // gameActiveがtrueの場合のみ終了処理を実行
       setGameActive(false);
-      setFeedback(`ゲーム終了！あなたのスコアは ${score} 点です！`);
+      setFeedback(`おわり！あなたのスコアは ${score} 点です！`);
       // スコア履歴を更新（難易度情報を追加）
       setScoreHistory(prevHistory => [...prevHistory, {
         回数: prevHistory.length + 1,
@@ -159,12 +159,12 @@ const AdditionGame = () => {
     <div className="flex flex-col items-center justify-center min-h-64 bg-gray-100 p-8 rounded-lg shadow-md">
       {!gameStarted ? (
         <div className="text-center w-full">
-          <h1 className="text-5xl font-bold mb-6 text-blue-600">計算ゲーム</h1>
+          <h1 className="text-5xl font-bold mb-6 text-blue-600">さんすうゲーム</h1>
           <p className="text-2xl mb-6">タイムアタック</p>
           
           {/* 計算モード選択ボタンを追加 */}
           <div className="mb-8">
-            <p className="text-xl mb-4 font-bold">計算モード：</p>
+            <p className="text-xl mb-4 font-bold">モード：</p>
             <div className="flex justify-center gap-6">
               <button 
                 onClick={() => setMode('たしざん')}
@@ -262,7 +262,7 @@ const AdditionGame = () => {
         </div>
       ) : !gameActive ? (
         <div className="text-center">
-          <h1 className="text-5xl font-bold mb-6 text-blue-600">ゲーム終了</h1>
+          <h1 className="text-5xl font-bold mb-6 text-blue-600">おわり</h1>
           <p className="text-2xl mb-6">{feedback}</p>
           <button 
             onClick={() => {
@@ -274,7 +274,7 @@ const AdditionGame = () => {
             }}
             className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg text-xl"
           >
-            もう一度プレイ
+            もういっかいプレイ
           </button>
         </div>
       ) : (
