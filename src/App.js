@@ -17,8 +17,8 @@ const AdditionGame = () => {
   const [level, setLevel] = useState('ふつう');
 
   // use-soundフックを使用して効果音を定義
-  const [playCorrect] = useSound('./public/maru_short.mp3', { volume: 0.7 });
-  const [playIncorrect] = useSound('./public/beep.mp3', { volume: 0.7 });
+  const [playCorrect] = useSound('./tree/main/public/maru_short.mp3', { volume: 0.7 });
+  const [playIncorrect] = useSound('./tree/main/public/beep.mp3', { volume: 0.7 });
 
   // レベルごとの数値の上限を定義
   const levelLimits = {
