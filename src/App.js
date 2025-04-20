@@ -9,7 +9,7 @@ const AdditionGame = () => {
   const [feedback, setFeedback] = useState('');
   const [selectedTime, setSelectedTime] = useState(30);
   const [timeLeft, setTimeLeft] = useState(30);
-  const [gameActive, setGameActive] = useState(false);
+  const [gameActive, setGameActive] = useState(true);
   const [gameStarted, setGameStarted] = useState(false);
   const [showTimer, setShowTimer] = useState(true);
   const [scoreHistory, setScoreHistory] = useState([]);
@@ -223,10 +223,10 @@ const AdditionGame = () => {
       ) : (
         <div className="text-center">
           <div className="flex justify-between w-full mb-6">
-            <div className="bg-blue-500 text-white px-4 py-2 rounded-lg text-xl">
+            <div className="bg-blue-500 text-white px-4 py-2 rounded-lg text-xl m-5">
               スコア: {score}
             </div>
-            <div className="bg-purple-500 text-white px-4 py-2 rounded-lg text-xl">
+            <div className="bg-purple-500 text-white px-4 py-2 rounded-lg text-xl m-5">
               難易度: {level}
             </div>
             <div 
