@@ -115,7 +115,7 @@ const AdditionGame = () => {
         setIsShowingFeedback(true);
         setTimeout(() => {
           setGameActive(false);
-          setFeedback(`おわり！あなたのスコアは ${score} 点です！`);
+          setFeedback(`スコアは ${score} 点でした！`);
           
           // スコア履歴を更新
           setScoreHistory(prevHistory => [...prevHistory, {
@@ -186,6 +186,49 @@ const AdditionGame = () => {
     }
     return () => clearTimeout(timer);
   }, [timeLeft, gameActive, score, selectedTime, level, mode, isEndless]);
+
+  // アニメーション用のスタイルをheadタグに追加
+  useEffect(() => {
+    const styleTag = document.createElement('style');
+    styleTag.innerHTML = `
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes scoreAppear {
+        0% { transform: scale(0); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+      }
+      @keyframes spinSlow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 0.8s ease-out forwards;
+      }
+      .animate-scoreAppear {
+        animation: scoreAppear 1.2s ease-out forwards;
+      }
+      .animate-spin-slow {
+        animation: spinSlow 10s linear infinite;
+      }
+      .animation-delay-300 {
+        animation-delay: 0.3s;
+      }
+      .animation-delay-500 {
+        animation-delay: 0.5s;
+      }
+      .animation-delay-700 {
+        animation-delay: 0.7s;
+      }
+    `;
+    document.head.appendChild(styleTag);
+    
+    return () => {
+      document.head.removeChild(styleTag);
+    };
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-64 bg-gray-100 p-8 rounded-lg shadow-md">
@@ -317,8 +360,39 @@ const AdditionGame = () => {
         </div>
       ) : !gameActive ? (
         <div className="text-center">
-          <h1 className="text-5xl font-bold mb-6 text-blue-600">おわり</h1>
-          <p className="text-2xl mb-6">{feedback}</p>
+          <div className="relative">
+            <h1 className="text-5xl font-bold mb-8 text-blue-600 animate-pulse">おわり</h1>
+            
+            <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl p-8 border-4 border-yellow-400 shadow-2xl mb-10 transform animate-fadeIn">
+              <div className="text-4xl font-bold mb-4 text-purple-800">
+                スコア
+              </div>
+              
+              <div className="text-8xl font-bold mb-6 text-blue-700 animate-scoreAppear relative inline-block">
+                {score}
+                <span className="absolute -top-4 -right-4 text-2xl text-yellow-500 font-bold">点</span>
+              </div>
+              
+              <div className="flex flex-wrap justify-center gap-4 mb-6">
+                <div className="bg-blue-500 text-white px-4 py-2 rounded-lg font-bold">
+                  {mode}
+                </div>
+                <div className="bg-green-500 text-white px-4 py-2 rounded-lg font-bold">
+                  難易度: {level}
+                </div>
+                <div className="bg-purple-500 text-white px-4 py-2 rounded-lg font-bold">
+                  {isEndless ? 'エンドレス' : `${selectedTime}秒`}
+                </div>
+              </div>
+            </div>
+            
+            {/* 装飾的な要素 */}
+            <div className="absolute top-0 left-0 animate-spin-slow text-6xl">🌟</div>
+            <div className="absolute top-1/4 right-0 animate-spin-slow animation-delay-300 text-6xl">✨</div>
+            <div className="absolute bottom-0 left-1/4 animate-spin-slow animation-delay-500 text-6xl">🌈</div>
+            <div className="absolute top-2/3 right-1/4 animate-spin-slow animation-delay-700 text-6xl">🎯</div>
+          </div>
+          
           <button 
             onClick={() => {
               setGameStarted(false);
@@ -328,7 +402,7 @@ const AdditionGame = () => {
               setIsEndless(false); // エンドレスモードもリセット
               // モードはリセットしない
             }}
-            className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg text-xl"
+            className="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-10 rounded-full text-2xl shadow-lg transform transition-transform hover:scale-105 border-2 border-green-300"
           >
             もういっかい
           </button>
