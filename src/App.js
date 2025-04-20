@@ -17,8 +17,10 @@ const AdditionGame = () => {
   const [level, setLevel] = useState('ふつう');
 
   // use-soundフックを使用して効果音を定義
-  const [playCorrect] = useSound('./tree/main/public/maru_short.mp3', { volume: 0.7 });
-  const [playIncorrect] = useSound('./tree/main/public/beep.mp3', { volume: 0.7 });
+  // const [playCorrect] = useSound('./tree/main/public/maru_short.mp3', { volume: 0.7 });
+  // const [playIncorrect] = useSound('./tree/main/public/beep.mp3', { volume: 0.7 });
+  const [playCorrect] = useSound('https://github.com/meme0728/sandbox/blob/3983584bad7080ca5ddbf5d75742505e3bb28070/public/maru_short.mp3', { volume: 0.7 });
+  const [playIncorrect] = useSound('https://github.com/meme0728/sandbox/blob/3983584bad7080ca5ddbf5d75742505e3bb28070/public/beep.mp3', { volume: 0.7 });
 
   // レベルごとの数値の上限を定義
   const levelLimits = {
@@ -223,10 +225,10 @@ const AdditionGame = () => {
       ) : (
         <div className="text-center">
           <div className="flex justify-between w-full mb-6">
-            <div className="bg-blue-500 text-white px-4 py-2 rounded-lg text-xl m-5">
+            <div className="bg-blue-500 text-white px-4 py-2 rounded-lg text-xl p-2">
               スコア: {score}
             </div>
-            <div className="bg-purple-500 text-white px-4 py-2 rounded-lg text-xl m-5">
+            <div className="bg-purple-500 text-white px-4 py-2 rounded-lg text-xl p-2">
               難易度: {level}
             </div>
             <div 
