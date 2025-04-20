@@ -19,6 +19,8 @@ const AdditionGame = () => {
   const [mode, setMode] = useState('たしざん');
   // フィードバック表示中かどうかを管理する状態変数を追加
   const [isShowingFeedback, setIsShowingFeedback] = useState(false);
+  // エンドレスモードを管理する状態変数を追加
+  const [isEndless, setIsEndless] = useState(false);
 
   // use-soundフックを使用して効果音を定義
   const [playCorrect] = useSound('./tree/main/public/maru_short.mp3', { volume: 0.7 });
@@ -58,8 +60,12 @@ const AdditionGame = () => {
     setGameActive(true);
     setGameStarted(true);
     setScore(0);
-    setTimeLeft(selectedTime);
-    setShowTimer(true);
+    if (!isEndless) {
+      setTimeLeft(selectedTime);
+    } else {
+      setTimeLeft(999); // エンドレスモードでは時間制限なし（表示用に大きな値を設定）
+    }
+    setShowTimer(!isEndless); // エンドレスモードではタイマーを表示しない
     generateNewQuestion();
   };
 
@@ -91,18 +97,43 @@ const AdditionGame = () => {
       setFeedback('せいかい！');
       setScore(score + 1);
       playSound(true); // 正解音を再生
+      
+      // フィードバック表示中フラグをオン
+      setIsShowingFeedback(true);
+      
+      // 1.5秒後に次の問題を表示
+      setTimeout(() => {
+        generateNewQuestion();
+      }, 1500);
     } else {
       setFeedback(`ざんねん。${correctAnswer} でした。`);
       playSound(false); // 不正解音を再生
+      
+      // エンドレスモードの場合、不正解でゲーム終了
+      if (isEndless) {
+        // フィードバック表示後にゲーム終了
+        setIsShowingFeedback(true);
+        setTimeout(() => {
+          setGameActive(false);
+          setFeedback(`おわり！あなたのスコアは ${score} 点です！`);
+          
+          // スコア履歴を更新
+          setScoreHistory(prevHistory => [...prevHistory, {
+            回数: prevHistory.length + 1,
+            スコア: score,
+            制限時間: 'エンドレス',
+            難易度: level,
+            モード: mode
+          }]);
+        }, 1500);
+      } else {
+        // 通常モードの場合は次の問題へ
+        setIsShowingFeedback(true);
+        setTimeout(() => {
+          generateNewQuestion();
+        }, 1500);
+      }
     }
-
-    // フィードバック表示中フラグをオン
-    setIsShowingFeedback(true);
-
-    // 1.5秒後に次の問題を表示
-    setTimeout(() => {
-      generateNewQuestion();
-    }, 1500);
   };
 
   // 数字ボタンがクリックされたときの処理
@@ -129,7 +160,8 @@ const AdditionGame = () => {
   // タイマー機能
   useEffect(() => {
     let timer;
-    if (gameActive && timeLeft > 0) {
+    // エンドレスモードでなく、時間が残っている場合のみタイマーを進める
+    if (gameActive && timeLeft > 0 && !isEndless) {
       timer = setTimeout(() => {
         setTimeLeft(timeLeft - 1);
         // タイマーが10秒経過したらタイマーを非表示にする
@@ -137,11 +169,11 @@ const AdditionGame = () => {
           setShowTimer(false);
         }
       }, 1000);
-    } else if (timeLeft === 0 && gameActive) {
-      // gameActiveがtrueの場合のみ終了処理を実行
+    } else if (timeLeft === 0 && gameActive && !isEndless) {
+      // タイムアップでゲーム終了（エンドレスモードでない場合のみ）
       setGameActive(false);
-      setFeedback(`おわり！あなたのスコアは ${score} 点です！`);
-      // スコア履歴を更新（難易度情報を追加）
+      setFeedback(`スコアは ${score} 点でした！`);
+      // スコア履歴を更新
       setScoreHistory(prevHistory => [...prevHistory, {
         回数: prevHistory.length + 1,
         スコア: score,
@@ -153,7 +185,7 @@ const AdditionGame = () => {
       setShowTimer(true);
     }
     return () => clearTimeout(timer);
-  }, [timeLeft, gameActive, score, selectedTime, level, mode]);
+  }, [timeLeft, gameActive, score, selectedTime, level, mode, isEndless]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-64 bg-gray-100 p-8 rounded-lg shadow-md">
@@ -228,11 +260,14 @@ const AdditionGame = () => {
           
           <div className="mb-8">
             <p className="text-xl mb-4 font-bold">制限時間を選択：</p>
-            <div className="flex justify-center gap-6">
+            <div className="flex justify-center gap-4">
               <button 
-                onClick={() => setSelectedTime(30)}
+                onClick={() => {
+                  setSelectedTime(30);
+                  setIsEndless(false);
+                }}
                 className={`px-6 py-3 rounded-lg text-xl font-bold ${
-                  selectedTime === 30 
+                  selectedTime === 30 && !isEndless
                     ? 'bg-blue-600 text-white' 
                     : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
                 }`}
@@ -240,16 +275,36 @@ const AdditionGame = () => {
                 30秒
               </button>
               <button 
-                onClick={() => setSelectedTime(60)}
+                onClick={() => {
+                  setSelectedTime(60);
+                  setIsEndless(false);
+                }}
                 className={`px-6 py-3 rounded-lg text-xl font-bold ${
-                  selectedTime === 60 
+                  selectedTime === 60 && !isEndless
                     ? 'bg-blue-600 text-white' 
                     : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
                 }`}
               >
                 1分
               </button>
+              <button 
+                onClick={() => {
+                  setIsEndless(true);
+                }}
+                className={`px-6 py-3 rounded-lg text-xl font-bold ${
+                  isEndless
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                }`}
+              >
+                エンドレス
+              </button>
             </div>
+            {isEndless && (
+              <p className="text-sm mt-2 text-purple-600 font-bold">
+                ※エンドレスモードでは不正解が出るまで続きます
+              </p>
+            )}
           </div>
           
           <button 
@@ -270,11 +325,12 @@ const AdditionGame = () => {
               setSelectedTime(30);
               setTimeLeft(30);
               setLevel('ふつう'); // 難易度もリセット
+              setIsEndless(false); // エンドレスモードもリセット
               // モードはリセットしない
             }}
             className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg text-xl"
           >
-            もういっかいプレイ
+            もういっかい
           </button>
         </div>
       ) : (
@@ -286,13 +342,20 @@ const AdditionGame = () => {
             <div className="bg-purple-500 text-white px-4 py-2 rounded-lg text-xl m-1">
               難易度: {level}
             </div>
-            <div 
-              className={`bg-red-500 text-white px-4 py-2 rounded-lg text-xl transition-opacity duration-1000 p-2 ${
-                showTimer ? 'opacity-100' : 'opacity-0'
-              }`}
-            >
-              残り時間: {timeLeft}秒
-            </div>
+            {!isEndless && (
+              <div 
+                className={`bg-red-500 text-white px-4 py-2 rounded-lg text-xl transition-opacity duration-1000 p-2 ${
+                  showTimer ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                残り時間: {timeLeft}秒
+              </div>
+            )}
+            {isEndless && (
+              <div className="bg-purple-600 text-white px-4 py-2 rounded-lg text-xl m-1">
+                エンドレスモード
+              </div>
+            )}
           </div>
           
           <div className="text-4xl mb-6">
