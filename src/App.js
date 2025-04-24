@@ -7,14 +7,14 @@ const AdditionGame = () => {
   const [userAnswer, setUserAnswer] = useState('');
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState('');
-  const [selectedTime, setSelectedTime] = useState(30);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [selectedTime, setSelectedTime] = useState(180);
+  const [timeLeft, setTimeLeft] = useState(180);
   const [gameActive, setGameActive] = useState(true);
   const [gameStarted, setGameStarted] = useState(false);
   const [showTimer, setShowTimer] = useState(true);
   const [scoreHistory, setScoreHistory] = useState([]);
   // 難易度レベルを保持する状態変数を追加
-  const [level, setLevel] = useState('ふつう');
+  const [level, setLevel] = useState('かんたん');
   // 計算モードを保持する状態変数を追加
   const [mode, setMode] = useState('たしざん');
   // フィードバック表示中かどうかを管理する状態変数を追加
@@ -194,7 +194,7 @@ const AdditionGame = () => {
       setScoreHistory(prevHistory => [...prevHistory, {
         回数: prevHistory.length + 1,
         スコア: score,
-        制限時間: selectedTime === 30 ? '30秒' : '1分',
+        制限時間: selectedTime === 30 ? '30秒' : '3分',
         難易度: level,
         モード: mode
       }]);
@@ -381,17 +381,17 @@ const AdditionGame = () => {
               </button>
               <button 
                 onClick={() => {
-                  setSelectedTime(60);
+                  setSelectedTime(180);
                   setIsEndless(false);
                   setIsSurvival(false);
                 }}
                 className={`px-6 py-3 rounded-lg text-xl font-bold ${
-                  selectedTime === 60 && !isEndless && !isSurvival
+                  selectedTime === 180 && !isEndless && !isSurvival
                     ? 'bg-blue-600 text-white' 
                     : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
                 }`}
               >
-                1分
+                3分
               </button>
               <button 
                 onClick={() => {
@@ -478,9 +478,9 @@ const AdditionGame = () => {
           <button 
             onClick={() => {
               setGameStarted(false);
-              setSelectedTime(30);
-              setTimeLeft(30);
-              setLevel('ふつう'); // 難易度もリセット
+              setSelectedTime(180);
+              setTimeLeft(180);
+              setLevel('かんたん'); // 難易度もリセット
               setIsEndless(false); // エンドレスモードもリセット
               setIsSurvival(false); // サバイバルモードもリセット
               // モードはリセットしない
